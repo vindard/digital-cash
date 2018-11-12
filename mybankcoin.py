@@ -75,6 +75,18 @@ class Bank:
 
         return coin
 
+    def observe_coin(self, coin):
+        last_observation = self.coins[coin.id]
+
+        last_observation_num_transfers = len(last_observation.transfers)
+        assert last_observation.transfers == \
+                coin.transfers[:last_observation_num_transfers]
+
+        coin.validate()
+
+        self.coins[coin.id] = deepcopy(coin)
+
+
     def fetch_coins(self, public_key):
         coins = []
         for coin in self.coins.values():
