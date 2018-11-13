@@ -13,6 +13,9 @@ class  TCPHandler(socketserver.BaseRequestHandler):
         message = self.request.recv(10).strip()
         print(f"got a message: {message}")
 
+        if message == b'ping':
+            self.request.sendall(b"pong\n")
+
 def serve():
     server = MyTCPServer(address, TCPHandler)
     server.serve_forever()
