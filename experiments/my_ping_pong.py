@@ -10,7 +10,7 @@ class MyTCPServer(socketserver.TCPServer):
 class  TCPHandler(socketserver.BaseRequestHandler):
 
     def handle(self):
-        message = self.request.recv(10)
+        message = self.request.recv(10).strip()
         print(f"got a message: {message}")
 
 def serve():
