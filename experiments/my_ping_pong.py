@@ -1,4 +1,4 @@
-import socketserver
+import socketserver, socket, sys
 
 host = "0.0.0.0"
 port = 10000
@@ -20,5 +20,18 @@ def serve():
     server = MyTCPServer(address, TCPHandler)
     server.serve_forever()
 
+def ping():
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.connect(address)
+    sock.sendall(b"ping")
+    data = sock.recv(10)
+    print(f"Received {data.decode()}")
+
 if __name__ == "__main__":
-    serve()
+    command = sys.argv[1]
+    if command == "serve":
+        serve()
+    elif command == "ping":
+        ping()
+    else:
+        print(f"Invalid command.")
