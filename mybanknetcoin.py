@@ -1,7 +1,22 @@
+"""
+BankNetCoin
+
+Usage:
+  banknetcoin.py serve
+  banknetcoin.py ping
+  banknetcoin.py balance <name>
+  banknetcoin.py tx <from> <to> <amount>
+
+Options:
+  -h --help     Show this screen.
+"""
+
 import uuid, socketserver, socket, sys
 from copy import deepcopy
 from ecdsa import SigningKey, SECP256k1
-from utils import serialize
+from utils import serialize, deserialize
+from identities import user_public_key
+from docopt import docopt
 
 def spend_message(tx, index):
     tx_in = tx.tx_ins[index]
@@ -96,7 +111,7 @@ class Bank:
         self.update_utxo(tx)
 
     def fetch_utxo(self, public_key):
-        return [utxo for utxo in self.utxo.values() 
+        return [utxo for utxo in self.utxo.values()
                 if utxo.public_key == public_key]
 
     def fetch_balance(self, public_key):
@@ -106,38 +121,77 @@ class Bank:
         return sum([tx_out.amount for tx_out in unspents])
 
 
+def prepare_message(command, data):
+    return {
+        "command": command,
+        "data": data
+    }
+
 host = "0.0.0.0"
 port = 10000
 address = (host, port)
+bank = Bank()
 
 class MyTCPServer(socketserver.TCPServer):
     allow_reuse_address = True
 
 class  TCPHandler(socketserver.BaseRequestHandler):
 
+    def respond(self, command, data):
+        response = prepare_message(command, data)
+        serialized_response = serialize(response)
+        self.request.sendall(serialized_response)
+
     def handle(self):
-        message = self.request.recv(10).strip()
+        message_data = self.request.recv(5000).strip()
+        message = deserialize(message_data)
+        command = message["command"]
+
+
         print(f"got a message: {message}")
 
-        if message == b'ping':
-            self.request.sendall(b"pong\n")
+        if command == 'ping':
+            self.respond("pong","")
+
+        if command == "balance":
+            public_key = message["data"]
+            balance = bank.fetch_balance(public_key)
+            self.respond("balance-response", balance)
+
+
 
 def serve():
     server = MyTCPServer(address, TCPHandler)
     server.serve_forever()
 
-def ping():
+def send_message(command, data):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.connect(address)
-    sock.sendall(b"ping")
-    data = sock.recv(10)
-    print(f"Received {data.decode()}")
 
-if __name__ == "__main__":
-    command = sys.argv[1]
-    if command == "serve":
+    message = prepare_message(command, data)
+    serialized_message = serialize(message)
+    sock.sendall(serialized_message)
+
+    message_data = sock.recv(5000)
+    message = deserialize(message_data)
+
+    print(f"Received {message}")
+
+def main(args):
+    if args["serve"]:
+        # HACK!
+        alice_public_key = user_public_key("alice")
+        bank.issue(1000, alice_public_key)
         serve()
-    elif command == "ping":
-        ping()
+    elif args["ping"]:
+        send_message("ping", "")
+    elif args["balance"]:
+        name = args["<name>"]
+        public_key = user_public_key(name)
+        send_message("balance", public_key)
     else:
         print(f"Invalid command.")
+
+if __name__ == "__main__":
+    args = docopt(__doc__)
+    main(args)
