@@ -1,8 +1,10 @@
-import socket, socketserver, sys, logging
+import socket, socketserver, sys, logging, os, threading
 
 host = "0.0.0.0"
 port = 10000
 address = (host, port)
+
+peer_hostnames = os.environ["PEERS"].split(",")
 
 
 logging.basicConfig(
@@ -23,12 +25,23 @@ class TCPHandler(socketserver.BaseRequestHandler):
             logger.info(f'Sent b"pong"')
 
 def serve():
+    schedule_pings()
     server = socketserver.TCPServer(address, TCPHandler)
     server.serve_forever()
 
-def ping():
+
+def ping_peers():
+    for hostname in peer_hostnames:
+        ping (hostname)
+
+
+def schedule_pings():
+    threading.Timer(1, ping_peers).start()
+
+def ping(hostname):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.connect(address)
+        addr = (hostname, port)
+        s.connect(addr)
         s.sendall(b"ping")
         data = s.recv(10)
         logger.info(f'Received {str(data)}')
