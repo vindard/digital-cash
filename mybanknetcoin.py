@@ -230,5 +230,3 @@ def main(args):
 if __name__ == "__main__":
     args = docopt(__doc__)
     main(args)
-
-# It works! Pausing at 1:45:30 https://youtu.be/g1R8XoSH5ig?t=6330
