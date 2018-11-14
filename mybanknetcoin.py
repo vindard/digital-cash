@@ -14,8 +14,8 @@ Options:
 import uuid, socketserver, socket, sys
 from copy import deepcopy
 from ecdsa import SigningKey, SECP256k1
-from utils import serialize, deserialize
-from identities import user_public_key
+from utils import serialize, deserialize, prepare_simple_tx
+from identities import user_private_key, user_public_key
 from docopt import docopt
 
 def spend_message(tx, index):
@@ -147,7 +147,6 @@ class  TCPHandler(socketserver.BaseRequestHandler):
         message = deserialize(message_data)
         command = message["command"]
 
-
         print(f"got a message: {message}")
 
         if command == 'ping':
@@ -158,11 +157,25 @@ class  TCPHandler(socketserver.BaseRequestHandler):
             balance = bank.fetch_balance(public_key)
             self.respond("balance-response", balance)
 
+        if command == "utxo":
+            public_key = message["data"]
+            utxo = bank.fetch_utxo(public_key)
+            self.respond("utxo-response", utxo)
+
+        if command == 'tx':
+            tx = message["data"]
+            try:
+                bank.handle_tx(tx)
+                self.respond("tx-response", data="accepted")
+            except:
+                self.respond("tx-response", data="rejected")
+
 
 
 def serve():
     server = MyTCPServer(address, TCPHandler)
     server.serve_forever()
+
 
 def send_message(command, data):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -177,6 +190,9 @@ def send_message(command, data):
 
     print(f"Received {message}")
 
+    return message
+
+
 def main(args):
     if args["serve"]:
         # HACK!
@@ -189,6 +205,25 @@ def main(args):
         name = args["<name>"]
         public_key = user_public_key(name)
         send_message("balance", public_key)
+    elif args["tx"]:
+        # banknetcoin.py tx <from> <to> <amount>
+        sender_private_key = user_private_key(args["<from>"])
+        sender_public_key = sender_private_key.get_verifying_key()
+
+        recipient_public_key = user_public_key(args["<to>"])
+        amount = int(args["<amount>"])
+
+        # Fetch sender utxo
+        utxo_response = send_message("utxo", sender_public_key)
+        utxo = utxo_response["data"]
+
+        # Prepare transaction
+        tx = prepare_simple_tx(utxo, sender_private_key,
+                                recipient_public_key, amount)
+
+        # Send transaction to bank
+        response = send_message("tx", tx)
+        print(response)
     else:
         print(f"Invalid command.")
 
