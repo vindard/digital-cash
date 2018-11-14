@@ -32,7 +32,7 @@ def serve():
 
 def ping_peers():
     for hostname in peer_hostnames:
-        ping (hostname)
+        ping(hostname)
 
 
 def schedule_pings():
