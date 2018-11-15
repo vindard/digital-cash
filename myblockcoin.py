@@ -180,6 +180,15 @@ class Bank:
         pass
         # TODO
 
+    def airdrop(self, tx):
+        assert len(self.blocks) == 0
+
+        # Update self.utxo_set
+        self.update_utxo_set(tx)
+
+        # Update self.blocks
+        block = Block([tx])
+        self.blocks.append(block)
 
 
 def prepare_message(command, data):
