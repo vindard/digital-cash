@@ -178,7 +178,6 @@ class Bank:
 
     def schedule_next_block(self):
         pass
-        # TODO
 
     def airdrop(self, tx):
         assert len(self.blocks) == 0
