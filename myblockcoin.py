@@ -11,7 +11,7 @@ Options:
   -h --help     Show this screen.
 """
 
-import uuid, socketserver, socket, sys, argparse
+import uuid, socketserver, socket, sys, argparse, time
 
 from docopt import docopt
 from copy import deepcopy
@@ -55,6 +55,24 @@ class TxIn:
     def outpoint(self):
         return (self.tx_id, self.index)
 
+class Block:
+
+    def __init__(self, txns, timestamp=None, signature=None):
+        if timestamp == None:
+            timestamp = time.time()
+        self.timestamp = timestamp
+        self.signature = signature
+        self.txns = txns
+
+    @property
+    def message(self):
+        data = [self.timestamp, self.txns]
+        return serialize(data)
+
+    def sign(self, private_key):
+        self.signature = private_key.sign(self.message)
+
+
 class TxOut:
 
     def __init__(self, tx_id, index, amount, public_key):
@@ -69,8 +87,12 @@ class TxOut:
 
 class Bank:
 
-    def __init__(self):
+    def __init__(self, id , private_key):
+        self.id = id
+        self.private_key = private_key
+        self.blocks = []
         self.utxo_set = {}
+        self.mempool = []
 
     def update_utxo_set(self, tx):
         for tx_out in tx.tx_outs:
@@ -116,8 +138,21 @@ class Bank:
         self.validate_tx(tx)
         self.update_utxo_set(tx)
 
+    def handle_block(self, block):
+        # Verify bank signature if height > 0
+
+        # Verify every transaction
+
+        # Update self.utxo_set
+
+        # Clean the mempool
+
+        # Update self.blocks
+
+        # Schedule next block
+
     def fetch_utxos(self, public_key):
-        return [utxo for utxo in self.utxo_set.values() 
+        return [utxo for utxo in self.utxo_set.values()
                 if utxo.public_key == public_key]
 
     def fetch_balance(self, public_key):
@@ -156,6 +191,9 @@ class TCPHandler(socketserver.BaseRequestHandler):
             except:
                 self.respond(command="tx-response", data="rejected")
 
+        if command == "block":
+            bank.handle_block(data)
+
         if command == "utxos":
             balance = bank.fetch_utxos(data)
             self.respond(command="utxos-response", data=balance)
@@ -167,7 +205,7 @@ class TCPHandler(socketserver.BaseRequestHandler):
 
 HOST, PORT = 'localhost', 9002
 ADDRESS = (HOST, PORT)
-bank = Bank()
+bank = None
 
 
 def serve():
@@ -184,6 +222,7 @@ def send_message(address, command, data, response=False):
 
 def main(args):
     if args["serve"]:
+        # TODO bank = Bank(...)
         from identities import alice_public_key
         bank.issue(1000, alice_public_key)
         serve()
