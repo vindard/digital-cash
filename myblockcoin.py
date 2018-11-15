@@ -255,6 +255,7 @@ class TCPHandler(socketserver.BaseRequestHandler):
 
         if command == "block":
             bank.handle_block(data)
+            logger.info(f"Block: {len(data.txns)} txns")
 
         if command == "utxos":
             balance = bank.fetch_utxos(data)
