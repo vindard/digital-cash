@@ -96,6 +96,8 @@ class Bank:
         self.blocks = []
         self.utxo_set = {}
         self.mempool = []
+        self.peer_addresses = {(hostname, PORT) for hostname
+                                in os.environ['PEERS'].split(',')}
 
     @property
     def next_id(self):
@@ -192,7 +194,8 @@ class Bank:
         self.handle_block(block)
 
         # Tell the other banks
-        
+        for address in self.peer_addresses:
+            send_message(address, "block", block)
 
     def schedule_next_block(self):
         if self.our_turn:
@@ -250,7 +253,7 @@ class TCPHandler(socketserver.BaseRequestHandler):
             self.respond(command="balance-response", data=balance)
 
 
-HOST, PORT = 'localhost', 9002
+HOST, PORT = 'localhost', 10000
 ADDRESS = (HOST, PORT)
 bank = None
 
