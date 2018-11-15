@@ -192,7 +192,7 @@ class Bank:
         self.handle_block(block)
 
         # Tell the other banks
-        # TODO from ping_peers() in alternating.py
+        
 
     def schedule_next_block(self):
         if self.our_turn:
