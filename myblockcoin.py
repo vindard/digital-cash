@@ -109,6 +109,10 @@ class Bank:
     def next_id(self):
         return len(self.blocks) % NUM_BANKS
 
+    @property
+    def our_turn(self):
+        return self.id == self.next_id
+
     def update_utxo_set(self, tx):
         for tx_out in tx.tx_outs:
             self.utxo_set[tx_out.outpoint] = tx_out
