@@ -113,6 +113,10 @@ class Bank:
     def our_turn(self):
         return self.id == self.next_id
 
+    # TODO
+    # Make a property called mempool_outpoints which is a list of tx_outpoints
+    # in the mempool. This would be later used in validate_tx for comparison.
+
     def update_utxo_set(self, tx):
         for tx_out in tx.tx_outs:
             self.utxo_set[tx_out.outpoint] = tx_out
@@ -136,6 +140,10 @@ class Bank:
             # TxIn spending unspent output
             assert tx_in.outpoint in self.utxo_set
 
+            # TODO
+            # Make sure no mempool tx is spending this tx's
+            # inputs already.
+
             # Grab the tx_out
             tx_out = self.utxo_set[tx_in.outpoint]
 
@@ -155,6 +163,9 @@ class Bank:
     def handle_tx(self, tx):
         # Save to self.utxo_set if it's valid
         self.validate_tx(tx)
+
+        # TODO
+        # Swap the below line out for a mempool.append command
         self.update_utxo_set(tx)
 
     def handle_block(self, block):
@@ -169,9 +180,6 @@ class Bank:
         # Update self.utxo_set
         for tx in block.txns:
             self.update_utxo_set(tx)
-
-        # Clean the mempool
-        # TODO as homework
 
         # Update self.blocks
         self.blocks.append(block)
@@ -190,6 +198,7 @@ class Bank:
         return sum([tx_out.amount for tx_out in utxos])
 
     def make_block(self):
+        # Move txns into block & reset mempool
         txns = deepcopy(self.mempool)
         self.mempool = []
         block = Block(txns)
