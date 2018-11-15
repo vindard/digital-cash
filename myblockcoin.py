@@ -1,11 +1,11 @@
 """
-BanknetCoin
+BlockCoin
 
 Usage:
-  banknetcoin.py serve
-  banknetcoin.py ping
-  banknetcoin.py tx <from> <to> <amount>
-  banknetcoin.py balance <name>
+  myblockcoin.py serve
+  myblockcoin.py ping
+  myblockcoin.py tx <from> <to> <amount>
+  myblockcoin.py balance <name>
 
 Options:
   -h --help     Show this screen.
