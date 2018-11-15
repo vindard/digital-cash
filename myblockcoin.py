@@ -123,16 +123,6 @@ class Bank:
         for tx_in in tx.tx_ins:
             del self.utxo_set[tx_in.outpoint]
 
-    def issue(self, amount, public_key):
-        id_ = str(uuid.uuid4())
-        tx_ins = []
-        tx_outs = [TxOut(tx_id=id_, index=0, amount=amount, public_key=public_key)]
-        tx = Tx(id=id_, tx_ins=tx_ins, tx_outs=tx_outs)
-
-        self.update_utxo_set(tx)
-
-        return tx
-
     def validate_tx(self, tx):
         in_sum = 0
         out_sum = 0
