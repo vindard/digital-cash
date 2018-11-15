@@ -21,6 +21,7 @@ from utils import serialize, deserialize, prepare_simple_tx
 from identities import user_public_key, user_private_key, bank_public_key
 
 
+BLOCK_TIME = 5
 NUM_BANKS = 3
 
 
@@ -176,8 +177,26 @@ class Bank:
         # Sum the amounts
         return sum([tx_out.amount for tx_out in utxos])
 
+    def make_block(self):
+        txns = deepcopy(self.mempool)
+        self.txns = []
+        block = Block(txns)
+        block.sign(self.private_key)
+        return block
+
+    def submit_block(self):
+        # Create the block
+        block = self.make_block()
+
+        # Save block locally
+        self.handle_block(block)
+
+        # Tell the other banks
+        # TODO from ping_peers() in alternating.py
+
     def schedule_next_block(self):
-        pass
+        if self.our_turn:
+            threading.Timer(BLOCK_TIME, self.submit_block).start()
 
     def airdrop(self, tx):
         assert len(self.blocks) == 0
