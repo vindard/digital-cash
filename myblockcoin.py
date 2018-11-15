@@ -191,7 +191,7 @@ class Bank:
 
     def make_block(self):
         txns = deepcopy(self.mempool)
-        self.txns = []
+        self.mempool = []
         block = Block(txns)
         block.sign(self.private_key)
         return block
@@ -236,7 +236,7 @@ class TCPHandler(socketserver.BaseRequestHandler):
         return self.request.sendall(serialize(response))
 
     def handle(self):
-        message_bytes = self.request.recv(1000).strip()
+        message_bytes = self.request.recv(5000).strip()
         message = deserialize(message_bytes)
         command = message["command"]
         data = message["data"]
