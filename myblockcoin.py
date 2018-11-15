@@ -18,8 +18,10 @@ from copy import deepcopy
 from ecdsa import SigningKey, SECP256k1
 from utils import serialize, deserialize, prepare_simple_tx
 
-from identities import user_public_key, user_private_key
+from identities import user_public_key, user_private_key, bank_public_key
 
+
+NUM_BANKS = 3
 
 
 def spend_message(tx, index):
@@ -94,6 +96,10 @@ class Bank:
         self.utxo_set = {}
         self.mempool = []
 
+    @property
+    def next_id(self):
+        return len(self.blocks) % NUM_BANKS
+
     def update_utxo_set(self, tx):
         for tx_out in tx.tx_outs:
             self.utxo_set[tx_out.outpoint] = tx_out
@@ -139,17 +145,26 @@ class Bank:
         self.update_utxo_set(tx)
 
     def handle_block(self, block):
-        # Verify bank signature if height > 0
+        # Verify bank signature
+        public_key = bank_public_key(self.next_id)
+        public_key.verify(block.signature, block.message)
 
         # Verify every transaction
+        for tx in block.txns:
+            self.validate_tx(tx)
 
         # Update self.utxo_set
+        for tx in block.txns:
+            self.update_utxo_set(tx)
 
         # Clean the mempool
+        # TODO as homework
 
         # Update self.blocks
+        self.blocks.append(block)
 
         # Schedule next block
+        self.schedule_next_block()
 
     def fetch_utxos(self, public_key):
         return [utxo for utxo in self.utxo_set.values()
@@ -160,6 +175,11 @@ class Bank:
         utxos = self.fetch_utxos(public_key)
         # Sum the amounts
         return sum([tx_out.amount for tx_out in utxos])
+
+    def schedule_next_block(self):
+        pass
+        # TODO
+
 
 
 def prepare_message(command, data):
