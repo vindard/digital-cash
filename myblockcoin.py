@@ -11,7 +11,7 @@ Options:
   -h --help     Show this screen.
 """
 
-import uuid, socketserver, socket, sys, argparse, time, os, logging
+import uuid, socketserver, socket, sys, argparse, time, os, logging, threading
 
 from docopt import docopt
 from copy import deepcopy
@@ -265,7 +265,7 @@ class TCPHandler(socketserver.BaseRequestHandler):
             self.respond(command="balance-response", data=balance)
 
 
-HOST, PORT = 'localhost', 10000
+HOST, PORT = '0.0.0.0', 10000
 ADDRESS = (HOST, PORT)
 bank = None
 
