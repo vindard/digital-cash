@@ -11,14 +11,20 @@ Options:
   -h --help     Show this screen.
 """
 
-import uuid, socketserver, socket, sys, argparse, time
+import uuid, socketserver, socket, sys, argparse, time, os, logging
 
 from docopt import docopt
 from copy import deepcopy
 from ecdsa import SigningKey, SECP256k1
 from utils import serialize, deserialize, prepare_simple_tx
 
-from identities import user_public_key, user_private_key, bank_public_key
+from identities import user_public_key, user_private_key, bank_public_key, bank_private_key, airdrop_tx
+
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)-15s %(levelname)s %(message)s')
+logger = logging.getLogger(__name__)
 
 
 BLOCK_TIME = 5
@@ -231,6 +237,8 @@ class TCPHandler(socketserver.BaseRequestHandler):
         command = message["command"]
         data = message["data"]
 
+        logger.info(f"Received {message}")
+
         if command == "ping":
             self.respond(command="pong", data="")
 
@@ -272,9 +280,14 @@ def send_message(address, command, data, response=False):
 
 def main(args):
     if args["serve"]:
-        # TODO bank = Bank(...)
-        from identities import alice_public_key
-        bank.issue(1000, alice_public_key)
+        global bank
+        bank_id = int(os.environ["BANK_ID"])
+        bank = Bank(
+            id=bank_id,
+            private_key=bank_private_key(bank_id)
+        )
+        bank.airdrop(airdrop_tx())
+        bank.schedule_next_block()
         serve()
     elif args["ping"]:
         response = send_message(ADDRESS, "ping", "", response=True)
