@@ -24,7 +24,11 @@ def mining_demo(header):
         proof = get_proof(header, nonce)
         elapsed_time = time.time() - start_time
 
-        print(f"bits: {difficulty_bits} target: {target} elapsed time: {elapsed_time} nonce: {nonce} proof: {proof}\n")
+        target_str = f"{target:.0e}"
+        elapsed_time_str = f"{elapsed_time:.0e}"
+        bin_proof_str = f"{proof:0256b}"
+
+        print(f"bits: {difficulty_bits} target: {target_str} elapsed time: {elapsed_time_str} nonce: {nonce} proof: {bin_proof_str}\n")
 
 
 if __name__ == "__main__":
