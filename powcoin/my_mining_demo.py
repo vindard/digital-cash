@@ -8,27 +8,30 @@ def get_proof(header, nonce):
     return int(proof_hex, 16)
 
 
-def mine(header, target):
-    nonce = 0
+def mine(header, target, nonce):
     while get_proof(header, nonce) >= target:
         nonce += 1 # new guess
     return nonce
 
 
 def mining_demo(header):
+    previous_nonce = 0
+    # numbr of leading bits we require
     for difficulty_bits in range(1, 30):
         target = 2 ** (256 - difficulty_bits)        
 
         start_time = time.time()
-        nonce = mine(header,target)
+        nonce = mine(header,target, previous_nonce)
         proof = get_proof(header, nonce)
         elapsed_time = time.time() - start_time
 
         target_str = f"{target:.0e}"
-        elapsed_time_str = f"{elapsed_time:.0e}"
-        bin_proof_str = f"{proof:0256b}"
+        elapsed_time_str = f"{elapsed_time:.0e}" if nonce != previous_nonce else ""
+        bin_proof_str = f"{proof:0256b}"[:50]
 
-        print(f"bits: {difficulty_bits} target: {target_str} elapsed time: {elapsed_time_str} nonce: {nonce} proof: {bin_proof_str}\n")
+        print(f"bits: {difficulty_bits:>3} target: {target_str:>7} elapsed time: {elapsed_time_str:>7} nonce: {nonce:>10} proof: {bin_proof_str}...\n")
+
+        previous_nonce = nonce
 
 
 if __name__ == "__main__":
