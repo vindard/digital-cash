@@ -101,7 +101,7 @@ class Block:
 
 class Node:
 
-    def __init__(self, id, private_key):
+    def __init__(self):
         self.blocks = []
         self.utxo_set = {}
         self.mempool = []
