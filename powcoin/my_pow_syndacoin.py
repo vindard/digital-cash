@@ -319,6 +319,17 @@ def main(args):
     if args["serve"]:
         global node
         node = Node()
+
+        # TODO: mine genesis block
+
+        # Start server thread
+        server_thread = threading.Thread(target=serve, name="server")
+        server_thread.start()
+
+        # Start miner thread
+        miner_thread = threading.Thread(target=mine_forever, name="miner")
+        miner_thread.start()
+
     elif args["ping"]:
         address = address_from_host(args["--node"])
         send_message(address, "ping", "")
