@@ -23,7 +23,7 @@ from identities import user_private_key, user_public_key
 
 
 PORT = 10000
-bank = None
+node = None
 
 logging.basicConfig(
     level="INFO",
@@ -78,14 +78,16 @@ class TxOut:
 
 class Block:
 
-    def __init__(self, txns):
+    def __init__(self, txns, prev_id, nonce):
         self.txns = txns
+        self.prev_id = prev_id
+        self.nonce = nonce
 
     @property
     def message(self):
         return serialize([self.timestamp, self.txns])
 
-class Bank:
+class Node:
 
     def __init__(self, id, private_key):
         self.blocks = []
@@ -158,7 +160,7 @@ class Bank:
         for tx in block.txns:
             self.update_utxo_set(tx)
         
-        # Add the block and increment the id of bank who will report next block
+        # Add the block to our chain
         self.blocks.append(block)
 
         # TODO Block propagation
@@ -253,17 +255,17 @@ class TCPHandler(socketserver.BaseRequestHandler):
             self.respond(command="pong", data="")
 
         if command == "block":
-            bank.handle_block(data)
+            node.handle_block(data)
 
         if command == "tx":
-            bank.handle_tx(data)
+            node.handle_tx(data)
 
         if command == "balance":
-            balance = bank.fetch_balance(data)
+            balance = node.fetch_balance(data)
             self.respond(command="balance-response", data=balance)
 
         if command == "utxos":
-            utxos = bank.fetch_utxos(data)
+            utxos = node.fetch_utxos(data)
             self.respond(command="utxos-response", data=utxos)
 
 def external_address(node):
@@ -315,7 +317,7 @@ def main(args):
         # Prepare transaction
         tx = prepare_simple_tx(utxos, sender_private_key, recipient_public_key, amount)
 
-        # send to bank
+        # send to node
         send_message(address, "tx", tx)
     else:
         print("Invalid command")
