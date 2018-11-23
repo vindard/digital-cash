@@ -222,10 +222,15 @@ def prepare_simple_tx(utxos, sender_private_key, recipient_public_key, amount):
 
 DIFFICULTY_BITS = 20
 POW_TARGET = 2 ** (256 - DIFFICULTY_BITS)
+mining_interrupt = threading.Event()
 
 def mine_block(block):
     while block.proof >= POW_TARGET:
         # TODO: accept interrupts here if tip changes
+        if mining_interrupt.is_set():
+            logger.info("Mining interrupted")
+            mining_interrupt.clear()
+            return
         block.nonce += 1
     return block
 
@@ -276,6 +281,7 @@ class TCPHandler(socketserver.BaseRequestHandler):
             if data.prev_id == node.blocks[-1].id:
                 node.handle_block(data)
                 # Interrupt mining thread
+                mining_interrupt.set()
 
         if command == "tx":
             node.handle_tx(data)
