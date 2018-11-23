@@ -214,12 +214,6 @@ def prepare_simple_tx(utxos, sender_private_key, recipient_public_key, amount):
 DIFFICULTY_BITS = 20
 POW_TARGET = 2 ** (256 - DIFFICULTY_BITS)
 
-def get_proof(header, nonce):
-    preimage = f"{header}:{nonce}".encode()
-    proof_hex = hashlib.sha256(preimage).hexdigest()
-    return int(proof_hex, 16)
-
-
 def mine_block(block):
     while block.proof >= POW_TARGET:
         # TODO: accept interrupts here if tip changes
@@ -229,7 +223,11 @@ def mine_block(block):
 def mine_forever():
     logging.info("Starting miner")
     while True:
-        unmined_block = Block(...)   # FIXME
+        unmined_block = Block(
+            txns=node.mempool,
+            prev_id=node.blocks[-1].id,
+            nonce=random.randint(0, 1000000000),
+        )
         mined_block = mine_block(block)
 
         if mined_block:
