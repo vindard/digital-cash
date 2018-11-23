@@ -253,16 +253,32 @@ def prepare_simple_tx(utxos, sender_private_key, recipient_public_key, amount):
 # Mining #
 ##########
 
+DIFFICULTY_BITS = 20
+POW_TARGET = 2 ** (256 - DIFFICULTY_BITS)
+
 def get_proof(header, nonce):
     preimage = f"{header}:{nonce}".encode()
     proof_hex = hashlib.sha256(preimage).hexdigest()
     return int(proof_hex, 16)
 
 
-def mine(header, target, nonce):
-    while get_proof(header, nonce) >= target:
+def mine_block(header):
+    # TODO remove "header"
+    while get_proof(header, nonce) >= POW_TARGET:
+        # TODO: accept interrupts here if tip changes
         nonce += 1  # new guess
     return nonce
+
+def mine_forever():
+    logging.info("Starting miner")
+    while True:
+        unmined_block = Block(...)   # FIXME
+        mined_block = mine_block(block)
+
+        if mined_block:
+            logger.info("")
+            logger.info("Mined a block")
+            node.handle_block(mined_block)
 
 
 ##############
