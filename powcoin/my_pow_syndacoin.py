@@ -249,6 +249,13 @@ def mine_forever():
             logger.info("Mined a block")
             node.handle_block(mined_block)
 
+def mine_genesis_block():
+    global node
+    unmined_block = Block(txns=[], prev_id=None, nonce=0)
+    mined_block = mine_block(unmined_block)
+    node.blocks.append(mined_block)
+    # TODO: update utxo set, award coinbase, etc
+
 
 ##############
 # Networking #
@@ -321,6 +328,7 @@ def main(args):
         node = Node()
 
         # TODO: mine genesis block
+        mine_genesis_block()
 
         # Start server thread
         server_thread = threading.Thread(target=serve, name="server")
