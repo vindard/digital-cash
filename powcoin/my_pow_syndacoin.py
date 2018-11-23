@@ -273,7 +273,9 @@ class TCPHandler(socketserver.BaseRequestHandler):
             self.respond(command="pong", data="")
 
         if command == "block":
-            node.handle_block(data)
+            if data.prev_id == node.blocks[-1].id:
+                node.handle_block(data)
+                # Interrupt mining thread
 
         if command == "tx":
             node.handle_tx(data)
