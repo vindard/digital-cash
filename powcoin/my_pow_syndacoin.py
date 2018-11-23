@@ -242,7 +242,7 @@ def mine_forever():
             prev_id=node.blocks[-1].id,
             nonce=random.randint(0, 1000000000),
         )
-        mined_block = mine_block(block)
+        mined_block = mine_block(unmined_block)
 
         if mined_block:
             logger.info("")
