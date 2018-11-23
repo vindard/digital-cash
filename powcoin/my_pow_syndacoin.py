@@ -220,12 +220,11 @@ def get_proof(header, nonce):
     return int(proof_hex, 16)
 
 
-def mine_block(header):
-    # TODO remove "header"
-    while get_proof(header, nonce) >= POW_TARGET:
+def mine_block(block):
+    while block.proof >= POW_TARGET:
         # TODO: accept interrupts here if tip changes
-        nonce += 1  # new guess
-    return nonce
+        block.nonce += 1
+    return block
 
 def mine_forever():
     logging.info("Starting miner")
