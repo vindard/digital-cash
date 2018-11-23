@@ -27,7 +27,7 @@ node = None
 
 logging.basicConfig(
     level="INFO",
-    format='%(asctime)-15s %(levelname)s %(message)s',
+    format='%(threadName)-6s | %(message)s',
 )
 logger = logging.getLogger(__name__)
 
