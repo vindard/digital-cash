@@ -12,7 +12,7 @@ Options:
   --node=<node>  Hostname of node [default: node0]
 """
 
-import uuid, socketserver, socket, sys, argparse, time, os, logging, threading
+import uuid, socketserver, socket, sys, argparse, time, os, logging, threading, hashlib
 
 from docopt import docopt
 from copy import deepcopy
@@ -249,6 +249,25 @@ def prepare_simple_tx(utxos, sender_private_key, recipient_public_key, amount):
 
     return tx
 
+##########
+# Mining #
+##########
+
+def get_proof(header, nonce):
+    preimage = f"{header}:{nonce}".encode()
+    proof_hex = hashlib.sha256(preimage).hexdigest()
+    return int(proof_hex, 16)
+
+
+def mine(header, target, nonce):
+    while get_proof(header, nonce) >= target:
+        nonce += 1  # new guess
+    return nonce
+
+
+##############
+# Networking #
+##############
 
 def prepare_message(command, data):
     return {
@@ -303,6 +322,10 @@ def send_message(address, command, data, response=False):
         s.sendall(serialize(message))
         if response:
             return deserialize(s.recv(5000))
+
+#######
+# CLI #
+#######
 
 def main(args):
     if args["serve"]:
