@@ -19,11 +19,9 @@ from copy import deepcopy
 from ecdsa import SigningKey, SECP256k1
 from utils import serialize, deserialize
 
-from identities import user_private_key, user_public_key, bank_private_key, bank_public_key, airdrop_tx
+from identities import user_private_key, user_public_key
 
 
-NUM_BANKS = 3
-BLOCK_TIME = 5   # in seconds
 PORT = 10000
 bank = None
 
@@ -80,37 +78,20 @@ class TxOut:
 
 class Block:
 
-    def __init__(self, txns, timestamp=None, signature=None):
-        if timestamp == None:
-            timestamp = time.time()
-        self.timestamp = timestamp
-        self.signature = signature
+    def __init__(self, txns):
         self.txns = txns
 
     @property
     def message(self):
         return serialize([self.timestamp, self.txns])
 
-    def sign(self, private_key):
-        self.signature = private_key.sign(self.message)
-
 class Bank:
 
     def __init__(self, id, private_key):
-        self.id = id
         self.blocks = []
         self.utxo_set = {}
         self.mempool = []
-        self.private_key = private_key
         self.peer_addresses = {(p, PORT) for p in os.environ.get('PEERS', '').split(',') if p}
-
-    @property
-    def next_id(self):
-        return len(self.blocks) % NUM_BANKS
-
-    @property
-    def our_turn(self):
-        return self.id == self.next_id
 
     @property
     def mempool_outpoints(self):
@@ -167,10 +148,7 @@ class Bank:
         self.mempool.append(tx)
 
     def handle_block(self, block):
-        # Genesis block has no signature
-        if len(self.blocks) > 0:
-            public_key = bank_public_key(self.next_id)
-            public_key.verify(block.signature, block.message)
+        # TODO self.validate_block()
 
         # Check the transactions are valid
         for tx in block.txns:
@@ -183,41 +161,7 @@ class Bank:
         # Add the block and increment the id of bank who will report next block
         self.blocks.append(block)
 
-        # Schedule submisison of next block
-        self.schedule_next_block()
-
-    def make_block(self):
-        # Reset mempool
-        txns = deepcopy(self.mempool)
-        self.mempool = []
-        block = Block(txns=txns)
-        block.sign(self.private_key)
-        return block
-
-    def submit_block(self):
-        # Make the block
-        block = self.make_block()
-
-        # Save locally
-        self.handle_block(block)
-
-        # Tell peers
-        for address in self.peer_addresses:
-            send_message(address, "block", block)
-
-    def schedule_next_block(self):
-        if self.our_turn:
-            threading.Timer(5, self.submit_block, []).start()
-
-    def airdrop(self, tx):
-        assert len(self.blocks) == 0
-
-        # Update utxo set
-        self.update_utxo_set(tx)
-
-        # Update blockchain
-        block = Block(txns=[tx])
-        self.blocks.append(block)
+        # TODO Block propagation
 
 def prepare_simple_tx(utxos, sender_private_key, recipient_public_key, amount):
     sender_public_key = sender_private_key.get_verifying_key()
@@ -345,17 +289,8 @@ def send_message(address, command, data, response=False):
 
 def main(args):
     if args["serve"]:
-        global bank
-        bank_id = int(os.environ["BANK_ID"])
-        bank = Bank(
-            id=bank_id,
-            private_key=bank_private_key(bank_id)
-        )
-        # Airdrop starting balances
-        bank.airdrop(airdrop_tx())
-        # Start producing blocks
-        bank.schedule_next_block()
-        serve()
+        global node
+        node = Node()
     elif args["ping"]:
         address = address_from_host(args["--node"])
         send_message(address, "ping", "")
