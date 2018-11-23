@@ -12,7 +12,7 @@ Options:
   --node=<node>  Hostname of node [default: node0]
 """
 
-import uuid, socketserver, socket, sys, argparse, time, os, logging, threading, hashlib
+import uuid, socketserver, socket, sys, argparse, time, os, logging, threading, hashlib, random
 
 from docopt import docopt
 from copy import deepcopy
@@ -167,7 +167,7 @@ class Node:
 
     def handle_block(self, block):
         # Check work, chain ordering
-        self.validate_block()
+        self.validate_block(block)
 
         # Check the transactions are valid
         for tx in block.txns:
@@ -307,6 +307,7 @@ def external_address(node):
     return ('localhost', port)
 
 def serve():
+    logger.info("Starting server")
     server = socketserver.TCPServer(("0.0.0.0", PORT), TCPHandler)
     server.serve_forever()
 
