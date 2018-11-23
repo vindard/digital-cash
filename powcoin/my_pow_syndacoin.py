@@ -84,8 +84,8 @@ class Block:
         self.nonce = nonce
 
     @property
-    def message(self):
-        return serialize([self.timestamp, self.txns])
+    def header(self):
+        return serialize(self)
 
 class Node:
 
