@@ -112,7 +112,7 @@ class Node:
         return [tx_in.outpoint for tx in self.mempool for tx_in in tx.tx_ins]
 
     def fetch_utxos(self, public_key):
-        return [tx_out for tx_out in self.utxo_set.values() 
+        return [tx_out for tx_out in self.utxo_set.values()
                 if tx_out.public_key == public_key]
 
     def update_utxo_set(self, tx):
@@ -161,8 +161,13 @@ class Node:
         self.validate_tx(tx)
         self.mempool.append(tx)
 
+    def validate_block(self, block):
+        assert block.proof < POW_TARGET, "Insufficient Proof-of-Work"
+        assert block.prev_id == self.blocks[-1].id
+
     def handle_block(self, block):
-        # TODO self.validate_block()
+        # Check work, chain ordering
+        self.validate_block()
 
         # Check the transactions are valid
         for tx in block.txns:
@@ -171,11 +176,15 @@ class Node:
         # If they're all good, update self.blocks and self.utxo_set
         for tx in block.txns:
             self.update_utxo_set(tx)
-        
+
         # Add the block to our chain
         self.blocks.append(block)
 
-        # TODO Block propagation
+        logger.info(f"Block accepted: height={len(self.blocks) - 1}")
+
+        # Block propagation
+        for peer_address in self.peer_addresses:
+            send_message(peer_address, "block", block)
 
 def prepare_simple_tx(utxos, sender_private_key, recipient_public_key, amount):
     sender_public_key = sender_private_key.get_verifying_key()
@@ -196,7 +205,7 @@ def prepare_simple_tx(utxos, sender_private_key, recipient_public_key, amount):
     tx_id = uuid.uuid4()
     change = tx_in_sum - amount
     tx_outs = [
-        TxOut(tx_id=tx_id, index=0, amount=amount, public_key=recipient_public_key), 
+        TxOut(tx_id=tx_id, index=0, amount=amount, public_key=recipient_public_key),
         TxOut(tx_id=tx_id, index=1, amount=change, public_key=sender_public_key),
     ]
 
