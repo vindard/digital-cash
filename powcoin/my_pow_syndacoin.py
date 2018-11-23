@@ -87,6 +87,18 @@ class Block:
     def header(self):
         return serialize(self)
 
+    @property
+    def id(self):
+        return hashlib.sha256(self.header).hexdigest()
+
+    @property
+    def proof(self):
+        return int(self.id, 16)
+
+        def __repr__(self):
+            return f"Block(prev_id={self.prev_id[:10]}... id={self.id[:10]}..."
+
+
 class Node:
 
     def __init__(self, id, private_key):
